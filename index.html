@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Vendas de Cartelas</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- jsPDF para exportar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Estilos personalizados -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .glowing-border {
+            box-shadow: 0 0 5px rgba(79, 70, 229, 0.4), 0 0 10px rgba(79, 70, 229, 0.3);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .modal-fade-in {
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <div class="min-h-screen w-full bg-gradient-to-br from-gray-900 via-indigo-900/50 to-gray-900 p-4 sm:p-6 lg:p-8">
+        <div class="max-w-4xl mx-auto">
+
+            <!-- Cabeçalho -->
+            <header class="text-center mb-10">
+                <h1 class="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+                    💲Vendedores e Comissões 💰
+                </h1>
+                <p class="text-indigo-300 mt-2 text-lg"></p>
+            </header>
+
+            <!-- Ações e Relatórios -->
+            <div class="flex flex-row gap-3 justify-end mb-6">
+                <button id="helpBtn" title="Ajuda / Guia Rápido" class="flex items-center justify-center bg-gray-700/50 hover:bg-gray-700 text-gray-300 font-medium p-2.5 rounded-lg transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                </button>
+                <button id="toggleBalance" title="Ocultar/Mostrar Saldos" class="flex items-center justify-center bg-gray-700/50 hover:bg-gray-700 text-gray-300 font-medium p-2.5 rounded-lg transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                </button>
+                <button id="exportPdf" title="Exportar Relatório em PDF" class="flex items-center justify-center bg-purple-600 hover:bg-purple-700 text-white font-medium p-2.5 rounded-lg transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="m15 15-3 3-3-3"/></svg>
+                </button>
+                <button id="settingsBtn" title="Configurações" class="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium p-2.5 rounded-lg transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+                <button id="clearAllBtn" title="Limpar Todos os Dados" class="flex items-center justify-center bg-red-600 hover:bg-red-700 text-white font-medium p-2.5 rounded-lg transition-colors hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                </button>
+            </div>
+            
+            <section id="balanceSection" class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                <div class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-700 flex items-center justify-between"><div><h2 class="text-sm font-medium text-indigo-300">SALDO GERAL (BRUTO)</h2><p id="generalBalance" class="text-3xl font-bold text-white">R$ 0,00</p></div></div>
+                <div class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-700 flex items-center justify-between"><div><h2 class="text-sm font-medium text-green-300">SALDO LÍQUIDO (LUCRO)</h2><p id="netBalance" class="text-3xl font-bold text-white">R$ 0,00</p></div></div>
+            </section>
+
+            <main class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-700">
+                    <h2 class="text-2xl font-bold mb-6 text-white flex items-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3 text-indigo-400"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>Adicionar Vendedor</h2>
+                    <form id="saleForm" class="space-y-4">
+                        <div><label for="sellerName" class="block text-sm font-medium text-gray-300 mb-1">Nome do Vendedor</label><input type="text" id="sellerName" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white"></div>
+                        <div><label for="cardsSold" class="block text-sm font-medium text-gray-300 mb-1">Cartelas Vendidas</label><input type="number" id="cardsSold" min="0" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white"></div>
+                        <button type="submit" class="w-full bg-indigo-600 font-semibold py-3 rounded-lg hover:bg-indigo-700 glowing-border">Calcular e Adicionar</button>
+                        <div id="formError" class="text-red-400 text-center text-sm pt-2 h-6"></div>
+                    </form>
+                </div>
+                <div class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-700">
+                    <h2 class="text-2xl font-bold mb-6 text-white flex items-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3 text-yellow-400"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Ranking de Vendedores</h2>
+                    <div id="loading" class="text-center text-gray-400">A carregar ranking...</div>
+                    <ul id="rankingList" class="space-y-3"></ul>
+                    <div id="rankingControls" class="mt-4 text-center hidden">
+                        <button id="toggleRankingList" class="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
+                            Mostrar todos
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Modais -->
+    <div id="resultModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden"><div class="modal-fade-in bg-gray-800 rounded-2xl w-full max-w-md border border-gray-700 shadow-2xl shadow-indigo-500/20"><div class="p-6"><h3 class="text-2xl font-bold text-white mb-1">Resumo do Acerto</h3><p id="modalSellerName" class="text-indigo-300 mb-4 text-lg"></p><div class="flex gap-2 text-xs mb-4"><div class="flex-1 p-2 bg-green-900/40 border border-green-500/30 rounded-lg text-center"><span class="block text-green-300/80">Preço da Cartela</span><strong id="metricCardPrice" class="text-green-300"></strong></div><div class="flex-1 p-2 bg-green-900/40 border border-green-500/30 rounded-lg text-center"><span class="block text-green-300/80">Comissão p/ Cartela</span><strong id="metricCommission" class="text-green-300"></strong></div></div><div class="space-y-3 text-base bg-gray-900/50 p-4 rounded-lg"><p id="detailLine1"></p><p id="detailLine2"></p><p id="detailLine3" class="font-bold text-white"></p></div><hr class="border-gray-700 my-4"><div class="p-4 bg-green-900/30 border border-green-500/50 rounded-lg flex justify-between items-center"><span class="text-green-300 font-medium">COMISSÃO DELE  👉🏻</span><span id="modalCommission" class="text-xl font-bold text-green-300"></span></div><div class="p-4 mt-3 bg-indigo-900/30 border border-indigo-500/50 rounded-lg flex justify-between items-center"><span class="text-indigo-300 font-medium">VOCÊ FICA COM  👉🏻</span><span id="modalAmountToPay" class="text-2xl font-bold text-indigo-300"></span></div></div><div class="bg-gray-900/50 px-6 py-4 rounded-b-2xl text-right"><button class="close-modal bg-indigo-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-indigo-700">Fechar</button></div></div></div>
+    <div id="sellerDetailsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden"><div class="modal-fade-in bg-gray-800 rounded-2xl w-full max-w-md border border-gray-700 shadow-2xl shadow-purple-500/20"><div class="p-6"><h3 class="text-2xl font-bold text-white mb-1">Histórico do Vendedor</h3><p id="detailsModalSellerName" class="text-purple-300 mb-6 text-lg"></p><div class="space-y-4"><div class="p-3 bg-gray-900/50 rounded-lg flex justify-between items-center"><span>Total de Cartelas Vendidas:</span><span id="detailsModalTotalCards" class="font-bold text-xl"></span></div><div class="p-3 bg-gray-900/50 rounded-lg flex justify-between items-center"><span>Total de Comissão Gerada:</span><span id="detailsModalTotalCommission" class="font-bold text-xl text-green-400"></span></div><div class="p-3 bg-gray-900/50 rounded-lg flex justify-between items-center"><span>Receita Bruta Gerada:</span><span id="detailsModalTotalRevenue" class="font-bold text-xl text-indigo-400"></span></div></div></div><div class="bg-gray-900/50 px-6 py-4 rounded-b-2xl text-right"><button class="close-modal bg-purple-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-purple-700">Fechar</button></div></div></div>
+    <div id="deleteConfirmModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden"><div class="modal-fade-in bg-gray-800 rounded-2xl w-full max-w-sm border-red-500/50 shadow-2xl shadow-red-500/20 p-6 text-center"><h3 class="text-xl font-bold text-white mb-2">Confirmar Exclusão</h3><p class="text-gray-300 mb-6">Tem a certeza que deseja apagar o vendedor <strong id="deleteSellerName" class="text-red-400"></strong>?</p><div class="flex justify-center gap-4"><button class="close-modal bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-gray-700">Cancelar</button><button id="confirmDelete" class="bg-red-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-red-700">Apagar</button></div></div></div>
+    <div id="editSellerModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden"><div class="modal-fade-in bg-gray-800 rounded-2xl w-full max-w-md border border-gray-700 shadow-2xl shadow-yellow-500/20 p-6"><h3 class="text-2xl font-bold text-white mb-6">Editar Vendedor</h3><form id="editForm" class="space-y-4"><div><label for="editSellerName" class="block text-sm font-medium text-gray-300 mb-1">Nome do Vendedor</label><input type="text" id="editSellerName" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5"></div><div><label for="editCardsSold" class="block text-sm font-medium text-gray-300 mb-1">Total de Cartelas Vendidas</label><input type="number" id="editCardsSold" min="0" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5"></div><div id="editFormError" class="text-red-400 text-center text-sm h-6"></div><div class="flex justify-end gap-4 pt-4"><button type="button" class="close-modal bg-gray-600 font-semibold py-2 px-5 rounded-lg">Cancelar</button><button type="submit" class="bg-yellow-600 font-semibold py-2 px-5 rounded-lg">Salvar</button></div></form></div></div>
+    <div id="settingsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden"><div class="modal-fade-in bg-gray-800 rounded-2xl w-full max-w-md border border-gray-700 shadow-2xl shadow-blue-500/20 p-6"><h3 class="text-2xl font-bold text-white mb-6">Configurações de Métricas</h3><form id="settingsForm" class="space-y-4"><div><label for="editCardPrice" class="block text-sm font-medium text-gray-300 mb-1">Preço da Cartela (R$)</label><input type="number" id="editCardPrice" min="0" step="0.01" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5"></div><div><label for="editCommission" class="block text-sm font-medium text-gray-300 mb-1">Comissão por Cartela (R$)</label><input type="number" id="editCommission" min="0" step="0.01" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5"></div><div id="settingsFormError" class="text-red-400 text-center text-sm h-6"></div><div class="flex justify-end gap-4 pt-4"><button type="button" class="close-modal bg-gray-600 font-semibold py-2 px-5 rounded-lg">Cancelar</button><button type="submit" class="bg-blue-600 font-semibold py-2 px-5 rounded-lg">Salvar</button></div></form></div></div>
+    <div id="clearConfirmModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden"><div class="modal-fade-in bg-gray-800 rounded-2xl w-full max-w-sm border-red-500/50 shadow-2xl shadow-red-500/20 p-6 text-center"><h3 class="text-xl font-bold text-white mb-2">Limpar Tudo?</h3><p class="text-gray-300 mb-6">Tem a certeza que deseja apagar TODOS os vendedores? Esta ação não pode ser desfeita.</p><div class="flex justify-center gap-4"><button class="close-modal bg-gray-600 font-semibold py-2 px-6 rounded-lg">Não</button><button id="confirmClearInitial" class="bg-red-600 font-semibold py-2 px-6 rounded-lg">Sim</button></div></div></div>
+    <div id="exportBeforeClearModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden"><div class="modal-fade-in bg-gray-800 rounded-2xl w-full max-w-md border-blue-500/50 shadow-2xl shadow-blue-500/20 p-6 text-center"><h3 class="text-xl font-bold text-white mb-2">Exportar Relatório?</h3><p class="text-gray-300 mb-6">Deseja salvar um relatório em PDF antes de limpar todos os dados?</p><div class="flex flex-col sm:flex-row justify-center gap-4"><button class="close-modal bg-gray-600 font-semibold py-2 px-4 rounded-lg">Cancelar</button><button id="clearWithoutExport" class="bg-red-600 font-semibold py-2 px-4 rounded-lg">Não, Limpar Agora</button><button id="exportAndClear" class="bg-blue-600 font-semibold py-2 px-4 rounded-lg">Sim, Exportar e Limpar</button></div></div></div>
+    <div id="helpModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="modal-fade-in bg-gray-800 rounded-2xl w-full max-w-2xl border border-gray-700 shadow-2xl shadow-gray-500/20 flex flex-col">
+            <div class="p-6">
+                <h3 class="text-2xl font-bold text-white mb-4">Guia Rápido: Gerenciador de Vendas</h3>
+            </div>
+            <div class="p-6 pt-0 text-gray-300 space-y-4 overflow-y-auto max-h-[70vh]">
+                <h4 class="text-lg font-semibold text-white mt-4">1. Adicionando um Novo Vendedor</h4>
+                <p>No formulário principal, preencha o nome e a quantidade de cartelas vendidas. O nome deve ser único; o sistema avisará se já existir. Ao clicar em "Calcular", um resumo detalhado aparecerá, mostrando os valores e as métricas usadas.</p>
+                <hr class="border-gray-700">
+                <h4 class="text-lg font-semibold text-white">2. Gerenciando o Ranking</h4>
+                <p>O ranking mostra os 3 melhores vendedores. Se houver mais, clique em "Mostrar todos" para ver a lista completa. Em cada vendedor, você pode:</p>
+                <ul class="list-disc list-inside space-y-1 pl-4">
+                    <li><strong class="text-white">Ver Detalhes:</strong> Clique na linha do vendedor.</li>
+                    <li><strong class="text-white">Editar (Ícone de Lápis):</strong> Corrija o nome ou total de cartelas.</li>
+                    <li><strong class="text-white">Excluir (Ícone de Lixeira):</strong> Remove o vendedor da lista.</li>
+                </ul>
+                <hr class="border-gray-700">
+                <h4 class="text-lg font-semibold text-white">3. Ferramentas e Ações (Ícones do Topo)</h4>
+                <ul class="list-disc list-inside space-y-2 pl-4">
+                    <li><strong class="text-white">(Ícone de Ajuda):</strong> Abre este guia.</li>
+                    <li><strong class="text-white">(Ícone de Olho):</strong> Oculta ou mostra os painéis de saldo.</li>
+                    <li><strong class="text-white">(Ícone de Documento):</strong> Exporta um relatório completo em PDF.</li>
+                    <li><strong class="text-white">(Ícone de Engrenagem):</strong> Permite alterar o preço da cartela e o valor da comissão.</li>
+                    <li><strong class="text-white">(Ícone de Lixeira Vermelha):</strong> Inicia o processo para limpar todos os dados, com opção de exportar antes.</li>
+                </ul>
+            </div>
+            <div class="bg-gray-900/50 px-6 py-4 rounded-b-2xl text-right"><button class="close-modal bg-gray-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-gray-700">Fechar</button></div>
+        </div>
+    </div>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const { jsPDF } = window.jspdf;
+
+        const DB_KEY = 'salesManagerData';
+        const DB_CONFIG_KEY = 'salesManagerConfig';
+        
+        let sellers = [];
+        let sellerToModifyId = null;
+        let errorTimeout;
+        let isRankingExpanded = false;
+        
+        let config = { cardPrice: 25, commissionPerCard: 3 };
+
+        const saleForm = document.getElementById('saleForm');
+        const rankingList = document.getElementById('rankingList');
+        const loadingDiv = document.getElementById('loading');
+        const generalBalanceEl = document.getElementById('generalBalance');
+        const netBalanceEl = document.getElementById('netBalance');
+        const balanceSection = document.getElementById('balanceSection');
+        const toggleBalanceBtn = document.getElementById('toggleBalance');
+        const exportPdfBtn = document.getElementById('exportPdf');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const helpBtn = document.getElementById('helpBtn');
+        const rankingControls = document.getElementById('rankingControls');
+        const toggleRankingListBtn = document.getElementById('toggleRankingList');
+        
+        const modals = {
+            result: document.getElementById('resultModal'),
+            details: document.getElementById('sellerDetailsModal'),
+            delete: document.getElementById('deleteConfirmModal'),
+            edit: document.getElementById('editSellerModal'),
+            settings: document.getElementById('settingsModal'),
+            clearConfirm: document.getElementById('clearConfirmModal'),
+            exportBeforeClear: document.getElementById('exportBeforeClearModal'),
+            help: document.getElementById('helpModal'),
+        };
+        
+        function loadData() {
+            try {
+                const sellersData = localStorage.getItem(DB_KEY);
+                sellers = sellersData ? JSON.parse(sellersData) : [];
+                const configData = localStorage.getItem(DB_CONFIG_KEY);
+                if (configData) config = JSON.parse(configData);
+            } catch (e) { console.error("Erro ao carregar dados:", e); sellers = []; }
+            updateUI();
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem(DB_KEY, JSON.stringify(sellers));
+                localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(config));
+            } catch (e) { console.error("Erro ao salvar dados:", e); }
+            updateUI();
+        }
+        
+        window.showSellerDetails = (id) => {
+            const s = sellers.find(sl => sl.id === id); if (!s) return;
+            modals.details.querySelector("#detailsModalSellerName").textContent = s.displayName;
+            modals.details.querySelector("#detailsModalTotalCards").textContent = s.totalCardsSold;
+            modals.details.querySelector("#detailsModalTotalCommission").textContent = formatCurrency(s.totalCardsSold * config.commissionPerCard);
+            modals.details.querySelector("#detailsModalTotalRevenue").textContent = formatCurrency(s.totalCardsSold * config.cardPrice);
+            modals.details.classList.remove("hidden");
+        };
+
+        window.promptDeleteSeller = (id) => {
+            const s = sellers.find(sl => sl.id === id); if (!s) return;
+            sellerToModifyId = id;
+            modals.delete.querySelector("#deleteSellerName").textContent = s.displayName;
+            modals.delete.classList.remove("hidden");
+        };
+
+        window.promptEditSeller = (id) => {
+            const s = sellers.find(sl => sl.id === id); if (!s) return;
+            sellerToModifyId = id;
+            modals.edit.querySelector("#editSellerName").value = s.displayName;
+            modals.edit.querySelector("#editCardsSold").value = s.totalCardsSold;
+            modals.edit.classList.remove("hidden");
+        };
+
+        function formatCurrency(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+        
+        function showFormError(el, msg) {
+            clearTimeout(errorTimeout);
+            el.textContent = msg;
+            errorTimeout = setTimeout(() => el.textContent = "", 3000);
+        }
+
+        function hideAllModals() { Object.values(modals).forEach(m => m.classList.add('hidden')); }
+        
+        function updateUI() {
+            renderDashboard();
+            renderRankingList();
+            clearAllBtn.classList.toggle('hidden', sellers.length === 0);
+        }
+
+        function renderDashboard() {
+            const tg = sellers.reduce((a, s) => a + (s.totalCardsSold * config.cardPrice), 0);
+            const tc = sellers.reduce((a, s) => a + (s.totalCardsSold * config.commissionPerCard), 0);
+            generalBalanceEl.textContent = formatCurrency(tg);
+            netBalanceEl.textContent = formatCurrency(tg - tc);
+        }
+
+        function renderRankingList() {
+            if (sellers.length === 0) {
+                loadingDiv.textContent = "Nenhum vendedor adicionado ainda.";
+                loadingDiv.style.display = "block";
+                rankingList.innerHTML = "";
+                rankingControls.classList.add("hidden");
+                return;
+            }
+            loadingDiv.style.display = "none";
+            const sortedSellers = [...sellers].sort((a, b) => b.totalCardsSold - a.totalCardsSold);
+            if (sortedSellers.length <= 3) {
+                rankingControls.classList.add("hidden");
+            } else {
+                rankingControls.classList.remove("hidden");
+                toggleRankingListBtn.textContent = isRankingExpanded ? `Mostrar menos` : `Mostrar todos os ${sortedSellers.length} vendedores`;
+            }
+            const toDisplay = isRankingExpanded ? sortedSellers : sortedSellers.slice(0, 3);
+            rankingList.innerHTML = toDisplay.map((s, i) => {
+                const r = i + 1;
+                let m = r === 1 ? "🥇" : r === 2 ? "🥈" : r === 3 ? "🥉" : "";
+                return `<li class="flex items-center justify-between bg-gray-900/70 p-3 rounded-lg border border-transparent hover:border-indigo-500 group" onclick='showSellerDetails("${s.id}")'><div class="flex items-center flex-grow min-w-0 cursor-pointer"><span class="font-bold text-lg w-8">${r}.</span><span class="font-medium text-white truncate">${s.displayName}</span></div><div class="text-right mr-4"><span class="font-bold text-lg text-indigo-300">${s.totalCardsSold}</span><span class="text-xs text-gray-400 block">cartelas</span></div><div class="w-6 text-center text-xl">${m}</div><div class="flex items-center gap-3 ml-2"><button onclick="event.stopPropagation(); promptEditSeller('${s.id}')" class="text-yellow-400 hover:text-yellow-300"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button><button onclick="event.stopPropagation(); promptDeleteSeller('${s.id}')" class="text-red-500 hover:text-red-400"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button></div></li>`;
+            }).join("");
+        }
+
+        function clearAllSellers() {
+            sellers = [];
+            isRankingExpanded = false;
+            saveData();
+            hideAllModals();
+        }
+
+        saleForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const sellerNameInput = document.getElementById('sellerName');
+            const cardsSoldInput = document.getElementById('cardsSold');
+            const sellerName = sellerNameInput.value.trim();
+            const cardsSold = parseInt(cardsSoldInput.value, 10);
+            const errorEl = document.getElementById('formError');
+
+            if (!sellerName) { showFormError(errorEl, "Insira o nome do vendedor."); return; }
+            if (isNaN(cardsSold) || cardsSold < 0) { showFormError(errorEl, "Insira um número de cartelas válido."); return; }
+
+            const sellerId = sellerName.toLowerCase().replace(/\s+/g, '-');
+            if (sellers.find(s => s.id === sellerId)) {
+                showFormError(errorEl, "Este nome já existe. Use um nome diferente (ex: Pedro S.).");
+                return;
+            }
+
+            sellers.push({ id: sellerId, displayName: sellerName, totalCardsSold: cardsSold });
+            saveData();
+            
+            const details = { sellerName, cardsSold, totalValue: cardsSold * config.cardPrice, commission: cardsSold * config.commissionPerCard, amountToPay: (cardsSold * config.cardPrice) - (cardsSold * config.commissionPerCard) };
+            modals.result.querySelector("#modalSellerName").textContent = `Vendedor: ${details.sellerName}`;
+            modals.result.querySelector("#metricCardPrice").textContent = formatCurrency(config.cardPrice);
+            modals.result.querySelector("#metricCommission").textContent = formatCurrency(config.commissionPerCard);
+            modals.result.querySelector("#detailLine1").innerHTML = `O vendedor vendeu ${details.cardsSold} cartelas, totalizando <strong class="text-green-300 font-bold">${formatCurrency(details.totalValue)}</strong>.`;
+            modals.result.querySelector("#detailLine2").innerHTML = `Você deve dar a ele <strong class="text-green-300 font-bold">${formatCurrency(details.commission)}</strong> de comissão.`;
+            modals.result.querySelector("#detailLine3").textContent = `Seu saldo líquido desta venda é de ${formatCurrency(details.amountToPay)}.`;
+            modals.result.querySelector("#modalCommission").textContent = formatCurrency(details.commission);
+            modals.result.querySelector("#modalAmountToPay").textContent = formatCurrency(details.amountToPay);
+            modals.result.classList.remove("hidden");
+
+            sellerNameInput.blur();
+            cardsSoldInput.blur();
+            saleForm.reset();
+        });
+
+        document.getElementById('confirmDelete').addEventListener('click', () => { sellers = sellers.filter(s => s.id !== sellerToModifyId); saveData(); hideAllModals(); });
+        
+        editForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const s = sellers.find(sl => sl.id === sellerToModifyId);
+            const newName = document.getElementById('editSellerName').value.trim();
+            const newCards = parseInt(document.getElementById('editCardsSold').value, 10);
+            const er = document.getElementById('editFormError');
+            if (!s || !newName || isNaN(newCards) || newCards < 0) { showFormError(er, "Dados inválidos."); return; }
+            const newId = newName.toLowerCase().replace(/\s+/g, "-");
+            if (sellers.some(sl => sl.id === newId && sl.id !== sellerToModifyId)) { showFormError(er, "Já existe um vendedor com esse nome."); return; }
+            s.displayName = newName; s.id = newId; s.totalCardsSold = newCards;
+            saveData();
+            hideAllModals();
+        });
+
+        settingsBtn.addEventListener('click', () => {
+            document.getElementById('editCardPrice').value = config.cardPrice;
+            document.getElementById('editCommission').value = config.commissionPerCard;
+            modals.settings.classList.remove('hidden');
+        });
+        
+        helpBtn.addEventListener('click', () => {
+            modals.help.classList.remove('hidden');
+        });
+
+        settingsForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const p = parseFloat(document.getElementById('editCardPrice').value);
+            const c = parseFloat(document.getElementById('editCommission').value);
+            const er = document.getElementById('settingsFormError');
+            if (isNaN(p) || p < 0 || isNaN(c) || c < 0) { showFormError(er, "Valores inválidos."); return; }
+            config.cardPrice = p; config.commissionPerCard = c;
+            saveData();
+            hideAllModals();
+        });
+
+        toggleBalanceBtn.addEventListener('click', () => balanceSection.classList.toggle('hidden'));
+        toggleRankingListBtn.addEventListener('click', () => { isRankingExpanded = !isRankingExpanded; renderRankingList(); });
+        
+        clearAllBtn.addEventListener('click', () => { if (sellers.length > 0) modals.clearConfirm.classList.remove('hidden'); });
+        document.getElementById('confirmClearInitial').addEventListener('click', () => { hideAllModals(); modals.exportBeforeClear.classList.remove('hidden'); });
+        document.getElementById('clearWithoutExport').addEventListener('click', clearAllSellers);
+        
+        const exportPdf = () => {
+            const doc = new jsPDF();
+            const today = new Date().toLocaleDateString('pt-BR');
+            const totalGross = sellers.reduce((acc, s) => acc + (s.totalCardsSold * config.cardPrice), 0);
+            const totalCommission = sellers.reduce((acc, s) => acc + (s.totalCardsSold * config.commissionPerCard), 0);
+            
+            doc.setFontSize(18); doc.text('Relatório de Vendas de Cartelas', 105, 20, { align: 'center' });
+            doc.setFontSize(10); doc.text(`Gerado em: ${today}`, 105, 27, { align: 'center' });
+            doc.setFontSize(12); doc.text('Resumo Financeiro', 14, 40);
+            doc.setFontSize(11);
+            doc.text(`Saldo Geral (Bruto): ${formatCurrency(totalGross)}`, 14, 48);
+            doc.text(`Total de Comissões Pagas: ${formatCurrency(totalCommission)}`, 14, 54);
+            doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.text(`Saldo Líquido (Lucro): ${formatCurrency(totalGross - totalCommission)}`, 14, 62);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(12); doc.text('Ranking de Vendedores', 14, 80);
+            
+            const tableHeaders = ["#", "Vendedor", "Cartelas", "Comissão"];
+            const tableData = [...sellers].sort((a,b) => b.totalCardsSold - a.totalCardsSold).map((s, i) => [i + 1, s.displayName, s.totalCardsSold, formatCurrency(s.totalCardsSold * config.commissionPerCard)]);
+            
+            let startY = 88;
+            doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+            doc.text(tableHeaders[0], 15, startY); doc.text(tableHeaders[1], 25, startY); doc.text(tableHeaders[2], 100, startY); doc.text(tableHeaders[3], 150, startY);
+            doc.setFont('helvetica', 'normal'); doc.line(14, startY + 2, 196, startY + 2);
+            startY += 8;
+            tableData.forEach(row => { doc.text(String(row[0]), 15, startY); doc.text(String(row[1]), 25, startY); doc.text(String(row[2]), 100, startY); doc.text(String(row[3]), 150, startY); startY += 7; });
+            
+            doc.save(`relatorio-vendas-${new Date().toISOString().slice(0,10)}.pdf`);
+        }
+        exportPdfBtn.addEventListener('click', exportPdf);
+        document.getElementById('exportAndClear').addEventListener('click', () => { exportPdf(); clearAllSellers(); });
+
+        Object.values(modals).forEach(m => {
+            m.addEventListener('click', (e) => { if (e.target === m) hideAllModals(); });
+            const closeButtons = m.querySelectorAll('.close-modal');
+            closeButtons.forEach(btn => btn.addEventListener('click', hideAllModals));
+        });
+        
+        loadData();
+    });
+    </script>
+</body>
+</html>
+
+
